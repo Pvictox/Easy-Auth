@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 import os
 
-from sqlmodel import create_engine, SQLModel, text
+from sqlmodel import create_engine, SQLModel, text, Session
 
 load_dotenv()  # Load environment variables from .env file
 
@@ -35,7 +35,9 @@ class Database():
         try:
             if self.engine:
                 with self.engine.connect() as connection:
-                    #connection.execute(text("SELECT 1")) # Simple query to test connection
+                    # data = connection.execute(text("SELECT * from auth.perfis")) # Simple query to test connection 
+                    # for row in data:
+                    #     print(row)
                     print("[DATABASE - INFO] Database connection successful.")
                 return True
             else:
@@ -46,7 +48,11 @@ class Database():
             return False 
 
 
+db = Database()
 
-
-
+def get_session():
+        if not db.engine:
+            raise ValueError("Engine is not initialized.")
+        with Session(db.engine) as session:
+            yield session
     

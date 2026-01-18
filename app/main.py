@@ -14,7 +14,7 @@ def router_includer(app: FastAPI) -> None:
 async def lifespan(app: FastAPI):
     if app.state.database.check_connection():
         print("[APP - INFO] Starting up application...")
-    yield
+    yield 
     print("[APP - INFO] Shutting down application...")
 
 

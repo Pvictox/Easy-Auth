@@ -1,6 +1,7 @@
 from app.models.perfil_model import PerfilModel
 from typing import List, Annotated
 from app.schemas.perfil_schema import PerfilBase, PerfilPublic, PerfilFormData
+from unidecode import unidecode
 
 class PerfilRepository:
     
@@ -22,7 +23,8 @@ class PerfilRepository:
     
     def create_perfil(self, data: PerfilFormData) -> PerfilBase | None:
         try: 
-            new_perfil = PerfilModel(valor=data.valor)
+            valor_normalized = unidecode(data.valor.lower())
+            new_perfil = PerfilModel(valor=valor_normalized)
             self.session.add(new_perfil)
             self.session.commit()
             self.session.refresh(new_perfil)

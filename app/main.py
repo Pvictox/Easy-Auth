@@ -23,7 +23,7 @@ def create_app() -> FastAPI:
     app.state.database = Database()
     # Include all routers
     router_includer(app)
-
+    
     return app
 
 app = create_app()

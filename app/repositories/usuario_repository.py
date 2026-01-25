@@ -17,7 +17,10 @@ class UsuarioRepository:
             UsuarioPublic(
                 nome= usuario.nome,
                 is_active= usuario.is_active,
-                perfil= usuario.perfil.valor
+                perfil= usuario.perfil.valor,
+                uid = usuario.uid,
+                email= usuario.email,
+
             ) for usuario in usuarios
         ]
 
@@ -30,7 +33,9 @@ class UsuarioRepository:
         return UsuarioPublic(
             nome= usuario.nome,
             is_active= usuario.is_active,
-            perfil= usuario.perfil.valor 
+            perfil= usuario.perfil.valor,
+            uid = usuario.uid,
+            email= usuario.email, 
         ) if usuario else None
     
     def create_usuario(self, data: UsuarioFormData) -> UsuarioBase | None:
@@ -40,7 +45,7 @@ class UsuarioRepository:
             if not perfil:
                 print(f"[USUARIO REPOSITORY - ERROR] Perfil '{perfil_nome}' not found. Cannot create usuario.")
                 return None
-            new_usuario = UsuarioModel(nome=data.nome, is_active=data.is_active, perfil_id=perfil.id_perfil)
+            new_usuario = UsuarioModel(nome=data.nome, is_active=data.is_active, perfil_id=perfil.id_perfil, uid=data.uid, email=data.email)
             self.session.add(new_usuario)
             self.session.commit()
             self.session.refresh(new_usuario)
@@ -49,7 +54,9 @@ class UsuarioRepository:
                 id_usuario=new_usuario.id_usuario ,
                 nome=new_usuario.nome,
                 is_active=new_usuario.is_active,
-                perfil_id=new_usuario.perfil_id
+                perfil_id=new_usuario.perfil_id,
+                uid = new_usuario.uid,
+                email= new_usuario.email,
             )
             return usuario_return
         except Exception as e:

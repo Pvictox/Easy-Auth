@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 import os
 
 from sqlmodel import create_engine, SQLModel, text, Session
+from app.core.config import settings
 
 load_dotenv()  # Load environment variables from .env file
 
@@ -15,7 +16,7 @@ class Database():
         pass
 
     def create_engine(self) -> None:
-        DATABASE_URL  = os.getenv("DATABASE_URL") 
+        DATABASE_URL  = settings.DATABASE_URL 
 
         if DATABASE_URL is None:
             raise ValueError("DATABASE_URL is not set in the environment variables.")

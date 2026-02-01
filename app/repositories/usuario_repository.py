@@ -9,6 +9,17 @@ class UsuarioRepository:
     def __init__(self, session):
         self.session = session
     
+    #TODO: Put in a generic base repository 
+    def get_usuario_by_kwargs(self, **kwargs) -> UsuarioModel | None:
+        usuario = self.session.query(UsuarioModel).filter_by(**kwargs).first()
+        if usuario:
+            print(f"[USUARIO REPOSITORY - INFO] Retrieved usuario with {kwargs} from the database.")
+            return usuario
+        else:
+            print(f"[USUARIO REPOSITORY - WARNING] No usuario found with {kwargs}.")
+            return None
+    
+
     def get_all_usuarios(self) -> List[UsuarioPublic] | None:
         usuarios = self.session.query(UsuarioModel).all()
         print(f"[USUARIO REPOSITORY - INFO] Retrieved {len(usuarios)} usuarios from the database.")
@@ -24,6 +35,7 @@ class UsuarioRepository:
             ) for usuario in usuarios
         ]
 
+    #TODO: Remove since we have a generic get by kwargs
     def get_usuario_by_id(self, usuario_id: int) -> UsuarioPublic | None:
         usuario = self.session.query(UsuarioModel).filter(UsuarioModel.id_usuario == usuario_id).first()
         if usuario:
@@ -45,7 +57,7 @@ class UsuarioRepository:
             if not perfil:
                 print(f"[USUARIO REPOSITORY - ERROR] Perfil '{perfil_nome}' not found. Cannot create usuario.")
                 return None
-            new_usuario = UsuarioModel(nome=data.nome, is_active=data.is_active, perfil_id=perfil.id_perfil, uid=data.uid, email=data.email)
+            new_usuario = UsuarioModel(nome=data.nome, perfil_id=perfil.id_perfil, uid=data.uid, email=data.email, hashed_pass=data.password)
             self.session.add(new_usuario)
             self.session.commit()
             self.session.refresh(new_usuario)

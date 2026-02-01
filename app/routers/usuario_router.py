@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends, status, HTTPException, Form
 from app.models.usuario_model import UsuarioModel
 from app.schemas.usuario_schema import *
-from app.repositories.usuario_repository import UsuarioRepository
+from app.repositories.usuario_repository import UsuarioRepository #TODO: Remove if not used
 from app.database import Database, get_session
 from typing import Annotated, List
 from sqlmodel import Session
+from app.services.usuario_service import UsuarioService
+
 router = APIRouter(
     prefix="/usuarios",
     tags=["usuarios"],
@@ -22,6 +24,7 @@ async def read_usuarios(session: SessionDependency) -> List[UsuarioPublic]:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No usuarios found")
     return usuarios
 
+
 @router.get("/{usuario_id}", tags=["usuarios"], status_code=status.HTTP_200_OK, response_model=UsuarioPublic)
 async def read_usuario(usuario_id: int, session: SessionDependency) -> UsuarioPublic:
     usuario_repository = UsuarioRepository(session=session)
@@ -36,9 +39,9 @@ async def create_usuario(
     session: SessionDependency
 ) -> UsuarioBase | None:
     
-    usuario_repository = UsuarioRepository(session=session)
+    usuario_service = UsuarioService(session=session)
     print("[USUARIO ROUTER - INFO] Creating new usuario...")
-    new_usuario = usuario_repository.create_usuario(data=data)
+    new_usuario = usuario_service.create_usuario(data=data)
     if not new_usuario:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create usuario")
     return new_usuario

@@ -8,7 +8,8 @@ class UsuarioBase(BaseModel):
     email: str
     perfil_id: int
 
-
+class UsuarioAuth(UsuarioBase):
+    hashed_pass: str
 
 class UsuarioPublic(BaseModel):
     nome: str
@@ -21,6 +22,6 @@ class UsuarioFormData(BaseModel):
     nome: str
     uid: str
     email: str
-    is_active: bool
     perfil: str
-  
+    password: str
+    

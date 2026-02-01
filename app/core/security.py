@@ -17,7 +17,7 @@ def create_access_token(user_uid: str, perfil: str) -> str:
     expire: datetime = datetime.now(timezone.utc) + timedelta(minutes=settings.ACESS_TOKEN_EXPIRE_MINUTES)
 
     to_encode = {
-        "expiration": expire,
+        "exp": int(expire.timestamp()),
         "uid": user_uid,
         "perfil": perfil,
     }
@@ -26,9 +26,7 @@ def create_access_token(user_uid: str, perfil: str) -> str:
     return encoded_jwt
 
 
-def create_refresh_token() -> Tuple[str, datetime]:
+def create_refresh_token() -> Tuple[str, int]:
     new_expire: datetime = datetime.now(timezone.utc) + timedelta(minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES)
-
     token = secrets.token_urlsafe(32)
-
-    return token, new_expire
+    return token, int(new_expire.timestamp())

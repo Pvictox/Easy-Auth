@@ -2,7 +2,7 @@ from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from app.models.usuario_model import UsuarioModel
+    from app.models import UsuarioModel
     
 class PerfilModel(SQLModel, table=True):
     __tablename__ : str = "perfis"

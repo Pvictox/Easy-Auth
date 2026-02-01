@@ -4,10 +4,10 @@ from sqlmodel import Field, Relationship, SQLModel
 
 
 if TYPE_CHECKING:
-    from app.models.usuario_model import UsuarioModel
+    from app.models import UsuarioModel
 
 
-class TokenModel(SQLModel):
+class TokenModel(SQLModel, table=True):
     __tablename__ : str = "tokens"
 
     id_token: Optional[int] = Field(default=None, primary_key=True)
@@ -21,4 +21,4 @@ class TokenModel(SQLModel):
 
     #Relationships
 
-    usuario: UsuarioModel = Relationship(back_populates="tokens")
+    usuario: "UsuarioModel" = Relationship(back_populates="tokens")

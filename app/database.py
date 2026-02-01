@@ -21,7 +21,7 @@ class Database():
         if DATABASE_URL is None:
             raise ValueError("DATABASE_URL is not set in the environment variables.")
 
-        self.engine = create_engine(DATABASE_URL, echo=True) if DATABASE_URL else None
+        self.engine = create_engine(DATABASE_URL, echo=os.getenv("DATABASE_LOG", "False").lower() == "true") if DATABASE_URL else None
 
     def get_engine(self) -> object:
         return self.engine

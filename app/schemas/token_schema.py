@@ -33,3 +33,10 @@ class TokenRefreshRequest(BaseModel):
     Token sent by the frontend to refresh the access token.
     '''
     refresh_token: str
+
+class TokenAuthenticatedData(BaseModel):
+    '''
+    Schema for data extracted from a validated token.
+    '''
+    uid: str | None
+    perfil: str | None

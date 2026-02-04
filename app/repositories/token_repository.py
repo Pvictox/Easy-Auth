@@ -1,6 +1,7 @@
 from datetime import datetime
 from app.schemas.token_schema import RefreshTokenCreate, TokenResponse
 from app.models.token import TokenModel
+from typing import List
 
 
 class TokenRepository:
@@ -12,6 +13,15 @@ class TokenRepository:
     #TODO: Put in a generic base repository 
     def get_token_by_kwargs(self, **kwargs) -> TokenModel | None:
         token = self.session.query(TokenModel).filter_by(**kwargs).first()
+        if token:
+            print(f"[TOKEN REPOSITORY - INFO] Retrieved token with {kwargs} from the database.")
+            return token
+        else:
+            print(f"[TOKEN REPOSITORY - WARNING] No token found with {kwargs}.")
+            return None  
+        
+    def get_all_tokens_by_kwargs(self, **kwargs) -> List[TokenModel] | None:
+        token = self.session.query(TokenModel).filter_by(**kwargs).all()
         if token:
             print(f"[TOKEN REPOSITORY - INFO] Retrieved token with {kwargs} from the database.")
             return token
@@ -30,9 +40,12 @@ class TokenRepository:
             raise
     
     def save_refresh_token(self, refresh_token: RefreshTokenCreate) -> TokenResponse:
-        existing_token = self.get_token_by_kwargs(usuario_id=refresh_token.usuario_id, is_revoked=False)
-        if existing_token: #TODO: Multiple active tokens per user policy?
-            raise ValueError("Active refresh token already exists for this user.")
+        # existing_tokens = self.get_all_tokens_by_kwargs(usuario_id=refresh_token.usuario_id, is_revoked=False)
+        # if existing_tokens:
+        #     #Revoking existing tokens before creating a new one
+        #     for token in existing_tokens:
+        #         token.is_revoked = True
+        #         self.session.add(token)
         
         try:
             token_model = TokenModel(

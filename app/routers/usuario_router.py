@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, status, HTTPException, Form
-from app.models.usuario_model import UsuarioModel
+from app.core.roles_checker import RolesChecker
+from app.schemas.token_schema import TokenAuthenticatedData
 from app.schemas.usuario_schema import *
 from app.repositories.usuario_repository import UsuarioRepository #TODO: Remove if not used
 from app.database import Database, get_session
+from app.core.security import get_current_user
 from typing import Annotated, List
 from sqlmodel import Session
 from app.services.usuario_service import UsuarioService
@@ -14,7 +16,20 @@ router = APIRouter(
 )
 
 
+_admin_required = RolesChecker(allowed_roles=["admin"])
+_usuario_required = RolesChecker(allowed_roles=["usuario"])
+
 SessionDependency = Annotated[ Session, Depends(get_session) ]
+
+@router.get("/me", tags=["usuarios"], status_code=status.HTTP_200_OK)
+async def read_current_user(current_user: Annotated[TokenAuthenticatedData, Depends(get_current_user)], session: SessionDependency):
+    if not current_user.uid:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authentication credentials")
+    return {
+        "uid": current_user.uid,
+        "perfil": current_user.perfil,
+        "message": "This is a protected route."
+    }
 
 @router.get("/", tags=["usuarios"], status_code=status.HTTP_200_OK, response_model=List[UsuarioPublic])
 async def read_usuarios(session: SessionDependency) -> List[UsuarioPublic]:

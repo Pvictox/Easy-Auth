@@ -12,7 +12,7 @@ class TokenModel(SQLModel, table=True):
 
     id_token: Optional[int] = Field(default=None, primary_key=True)
     token: str = Field(index=True, nullable=False, unique=True)
-    expiration_time: datetime = Field(nullable=False, default_factory=lambda: datetime.now(timezone.utc))
+    exp: datetime = Field(nullable=False, default_factory=lambda: datetime.now(timezone.utc))
     created_at: datetime = Field(nullable=False, default_factory=lambda: datetime.now(timezone.utc))
 
     is_revoked: bool = Field(default=False, nullable=False)

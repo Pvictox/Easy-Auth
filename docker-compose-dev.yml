@@ -1,0 +1,37 @@
+services:
+  db: 
+    image: postgres:15-alpine
+    container_name: auth_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD} #Present in .env file
+      POSTGRES_DB: ${DB_NAME} #Present in .env file
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  
+  app:
+    build: .
+    container_name: auth_backend
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+psycopg2://postgres:${DB_PASSWORD}@db:5432/${DB_NAME}?options=-csearch_path=auth
+      ENVIRONMENT: development 
+    depends_on:
+      db: 
+        condition: service_healthy
+    volumes:
+      - .:/app
+    command: /start.sh
+
+volumes:
+  postgres_data:

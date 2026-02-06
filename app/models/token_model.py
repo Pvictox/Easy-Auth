@@ -9,6 +9,7 @@ if TYPE_CHECKING:
 
 class TokenModel(SQLModel, table=True):
     __tablename__ : str = "tokens"
+    __table_args__ = {"schema": "auth"}
 
     id_token: Optional[int] = Field(default=None, primary_key=True)
     token: str = Field(index=True, nullable=False, unique=True)
@@ -17,7 +18,7 @@ class TokenModel(SQLModel, table=True):
 
     is_revoked: bool = Field(default=False, nullable=False)
 
-    usuario_id: int = Field(foreign_key="usuario.id_usuario", nullable=False)
+    usuario_id: int = Field(foreign_key="auth.usuario.id_usuario", nullable=False)
 
     #Relationships
 

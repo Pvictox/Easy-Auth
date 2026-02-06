@@ -6,6 +6,7 @@ if TYPE_CHECKING:
 
 class UsuarioModel(SQLModel, table=True):
     __tablename__ : str = "usuario"
+    __table_args__ = {"schema": "auth"}
 
     id_usuario: int = Field(default=None, primary_key=True)
     nome: str = Field(nullable=False)
@@ -15,7 +16,7 @@ class UsuarioModel(SQLModel, table=True):
     hashed_pass : str = Field(nullable=False, unique=False)    
 
     #Foreign key to PerfilModel
-    perfil_id: int = Field(default=None, foreign_key="perfis.id_perfil", nullable=False)
+    perfil_id: int = Field(default=None, foreign_key="auth.perfis.id_perfil", nullable=False)
 
     #Relationships
     perfil: "PerfilModel" = Relationship(back_populates="usuarios")

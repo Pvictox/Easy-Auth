@@ -1,6 +1,6 @@
 from datetime import datetime
 from app.schemas.token_schema import RefreshTokenCreate, TokenResponse
-from app.models.token import TokenModel
+from app.models.token_model import TokenModel
 from typing import List
 
 

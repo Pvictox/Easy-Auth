@@ -3,6 +3,7 @@ from app.routers import routers
 from contextlib import asynccontextmanager
 from app.database import Database
 from fastapi.middleware.cors import CORSMiddleware
+from .seeds import check_and_seed
 
 def router_includer(app: FastAPI) -> None:
     '''
@@ -14,6 +15,7 @@ def router_includer(app: FastAPI) -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     if app.state.database.check_connection():
+        check_and_seed()
         print("[APP - INFO] Starting up application...")
     yield 
     print("[APP - INFO] Shutting down application...")

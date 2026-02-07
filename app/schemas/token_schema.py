@@ -24,7 +24,7 @@ class TokenResponse(BaseModel):
     Schema for token who will be returned to the frontend.
     '''
     token: str
-    refresh_token: str
+    #refresh_token: str
     exp: int
     type: str = "bearer"
 

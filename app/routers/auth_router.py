@@ -1,5 +1,5 @@
 import json
-from fastapi import APIRouter, Depends, status, HTTPException, Form
+from fastapi import APIRouter, Depends, status, HTTPException, Form, Response, Cookie
 from app.database import Database, get_session
 from app.schemas.token_schema import TokenResponse, TokenRefreshRequest
 from app.schemas.login_schema import LoginRequest
@@ -24,11 +24,11 @@ SessionDependency = Annotated[ Session, Depends(get_session) ]
 
 
 @router.post("/login",tags=["authentication"], status_code=status.HTTP_200_OK, response_model=TokenResponse)
-async def login(login_data: Annotated[LoginRequest, Form()], session: SessionDependency) -> TokenResponse | None:
+async def login(login_data: Annotated[LoginRequest, Form()], session: SessionDependency, response:Response) -> TokenResponse | None:
     try:
         print("[AUTH ROUTER - INFO] Handling login request...")
         auth_service = AuthService(session=session)
-        token_response = auth_service.handle_login(data=login_data)
+        token_response = auth_service.handle_login(data=login_data, response=response)
         
         if not token_response:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid UID or password")
@@ -39,11 +39,13 @@ async def login(login_data: Annotated[LoginRequest, Form()], session: SessionDep
     
     
 @router.post("/refresh", tags=["authentication"], status_code=status.HTTP_200_OK, response_model=TokenResponse)
-async def refresh_token(data: Annotated[TokenRefreshRequest, Form()], session: SessionDependency) -> TokenResponse | None:
+async def refresh_token(refresh_token: Annotated[str | None, Cookie()], session: SessionDependency, response: Response) -> TokenResponse | None:
     try:
-        print("[AUTH ROUTER - INFO] Handling token refresh request...")
+        if not refresh_token:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Refresh token is missing")
+        
         auth_service = AuthService(session=session)
-        token_response = auth_service.refresh_acess_token(refresh_token=data.refresh_token)
+        token_response = auth_service.refresh_acess_token(refresh_token=refresh_token, response=response)
         
         if not token_response:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")

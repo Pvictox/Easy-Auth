@@ -45,7 +45,7 @@ def create_access_token(user_uid: str, perfil: str) -> str:
     expire: datetime = datetime.now(timezone.utc) + timedelta(minutes=settings.ACESS_TOKEN_EXPIRE_MINUTES)
 
     to_encode = {
-        "exp": int(expire.timestamp()),
+        #"exp": int(expire.timestamp()),
         "uid": user_uid,
         "perfil": perfil,
     }

@@ -8,6 +8,9 @@ from app.core.security import get_current_user
 from typing import Annotated, List
 from sqlmodel import Session
 from app.services.usuario_service import UsuarioService
+from app.log_config.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 router = APIRouter(
     prefix="/usuarios",
@@ -45,6 +48,7 @@ async def read_usuario(usuario_id: int, session: SessionDependency) -> UsuarioPu
     usuario_repository = UsuarioRepository(session=session)
     usuario = usuario_repository.get_usuario_by_id(usuario_id=usuario_id)
     if not usuario:
+        logger.warning(f"Usuario with id {usuario_id} not found in the database.")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Usuario with id {usuario_id} not found")
     return usuario
 

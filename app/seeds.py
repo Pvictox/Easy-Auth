@@ -4,6 +4,7 @@ from app.models import PerfilModel, UsuarioModel
 from dotenv import load_dotenv
 import os
 from app.core.security import get_password_hash
+from app.log_config.logging_config import get_logger
 import logging
 
 load_dotenv()
@@ -13,7 +14,7 @@ load_dotenv()
     It should be run after the database tables have been created. (You can do it after running the migration present in the alembic folder).
 '''
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 def seed_perfis():
     try:
@@ -26,13 +27,13 @@ def seed_perfis():
             #check if perfis already exist
             existing_perfis = session.exec(select(PerfilModel)).all()
             if existing_perfis:
-                print("[SEED] Perfis already exist. Skipping seeding perfis.")
+                logger.info("[SEED] Perfis already exist. Skipping seeding perfis.")
                 return
             session.add_all(perfis)
             session.commit()
-            print("[SEED] Perfis seeded successfully.")
+            logger.info("[SEED] Perfis seeded successfully.")
     except Exception as e:
-        print(f"[SEED - ERROR] Failed to seed perfis: {e}")
+        logger.error(f"[SEED - ERROR] Failed to seed perfis: {e}")
 
 def seed_admin_user():
     try:
@@ -40,7 +41,7 @@ def seed_admin_user():
             # Check if admin user already exists
             result = session.exec(select(PerfilModel).where(PerfilModel.valor == "admin")).first()
             if not result:
-                print("[SEED] Admin perfil not found. Please seed perfis first.")
+                logger.info("[SEED] Admin perfil not found. Please seed perfis first.")
                 return
             
             admin_perfil = result
@@ -51,7 +52,7 @@ def seed_admin_user():
             ).first()
             
             if existing_admin:
-                print("[SEED] Admin user already exists. Skipping seeding admin user.")
+                logger.info("[SEED] Admin user already exists. Skipping seeding admin user.")
                 return
             
             admin_user = UsuarioModel(
@@ -64,7 +65,7 @@ def seed_admin_user():
 
             session.add(admin_user)
             session.commit()
-            print("[SEED] Admin user seeded successfully.")    
+            logger.info("[SEED] Admin user seeded successfully.")    
     except Exception as e:
         logger.error(f"[SEED - ERROR] Failed to seed admin user: {e}")
 

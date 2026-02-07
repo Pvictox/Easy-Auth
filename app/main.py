@@ -1,9 +1,14 @@
 from fastapi import FastAPI
+from fastapi.responses import JSONResponse
+from app.log_config.logging_config import setup_logging, get_logger
 from app.routers import routers
 from contextlib import asynccontextmanager
 from app.database import Database
 from fastapi.middleware.cors import CORSMiddleware
 from .seeds import check_and_seed
+
+setup_logging()
+logger = get_logger(__name__)
 
 def router_includer(app: FastAPI) -> None:
     '''
@@ -16,9 +21,9 @@ def router_includer(app: FastAPI) -> None:
 async def lifespan(app: FastAPI):
     if app.state.database.check_connection():
         check_and_seed()
-        print("[APP - INFO] Starting up application...")
+        logger.info("Starting up application...")
     yield 
-    print("[APP - INFO] Shutting down application...")
+    logger.info("Shutting down application...")
 
 
 def create_app() -> FastAPI:
@@ -40,7 +45,23 @@ def create_app() -> FastAPI:
 
     # Include all routers
     router_includer(app)
-    
+    logger.info("Application created successfully")
     return app
 
 app = create_app()
+
+
+@app.middleware("http")
+async def log_requests(request, call_next):
+    logger.info(f"Incoming request: {request.method} {request.url}")
+    response = await call_next(request)
+    logger.info(f"Response status: {response.status_code} for {request.method} {request.url}")
+    return response
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc):
+    logger.error(f"Unhandled exception: {exc} for request {request.method} {request.url}")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "An unexpected error occurred. Please try again later."},
+    )

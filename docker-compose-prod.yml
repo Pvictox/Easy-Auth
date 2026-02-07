@@ -20,7 +20,7 @@ services:
     build: .
     container_name: auth_backend
     env_file:
-      - .env
+      - .env.prod
     ports:
       - "8000:8000"
     environment:

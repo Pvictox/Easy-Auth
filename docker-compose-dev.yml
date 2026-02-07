@@ -31,7 +31,10 @@ services:
         condition: service_healthy
     volumes:
       - .:/app
+      - logs:/app/logs
     command: /start.sh
 
 volumes:
   postgres_data:
+  logs:
+

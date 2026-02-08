@@ -1,21 +1,25 @@
+from sqlmodel import Session
 from app.core.config import settings
-from fastapi.security import OAuth2PasswordBearer
 from fastapi import Depends, HTTPException, status
-
+from app.database import get_session
 from app.schemas.token_schema import TokenAuthenticatedData
-from jose import jwt
+from jose import jwt, JWTError
 from datetime import datetime, timedelta, timezone
-from typing import Tuple
+from typing import Tuple, Annotated
 from passlib.context import CryptContext
 import secrets
+from app.log_config.logging_config import get_logger
+from app.schemas.usuario_schema import UsuarioPublic
+from app.core.cookie import CookieBearer
+
+logger = get_logger(__name__)
 
 pwd_context = CryptContext(schemes=[settings.CRYPT_CONTEXT_SCHEMES], deprecated="auto")
+SessionDependency = Annotated[ Session, Depends(get_session) ]
+cookie_scheme = CookieBearer()
 
-oauth_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
-
-async def get_current_user(token: str = Depends(oauth_scheme)) -> TokenAuthenticatedData:
+async def get_current_user(token: str = Depends(cookie_scheme)) -> TokenAuthenticatedData:
     
-    #Base exception to return in case of any failure
     #TODO: Create custom exceptions
     base_exception = HTTPException(
         status_code= status.HTTP_401_UNAUTHORIZED,
@@ -25,12 +29,14 @@ async def get_current_user(token: str = Depends(oauth_scheme)) -> TokenAuthentic
 
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        user_uid: str | None = payload.get("uid")
-        perfil: str | None = payload.get("perfil")
-        if user_uid is None or perfil is None:
+        user = payload.get("user")
+        if user is None:
             raise base_exception
-        token_data = TokenAuthenticatedData(uid=user_uid, perfil=perfil)
+        token_data = TokenAuthenticatedData(user=UsuarioPublic.model_validate_json(user))
         return token_data
+    except JWTError as e:
+        logger.error(f"JWT decoding error: {str(e)}")
+        raise base_exception
     except Exception as e:
         raise base_exception
 
@@ -41,13 +47,11 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
-def create_access_token(user_uid: str, perfil: str) -> str:
+def create_access_token(usuario: UsuarioPublic) -> str:
     expire: datetime = datetime.now(timezone.utc) + timedelta(minutes=settings.ACESS_TOKEN_EXPIRE_MINUTES)
-
     to_encode = {
-        #"exp": int(expire.timestamp()),
-        "uid": user_uid,
-        "perfil": perfil,
+        "exp": int(expire.timestamp()),
+        "user": usuario.model_dump_json()
     }
 
     encoded_jwt: str = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)

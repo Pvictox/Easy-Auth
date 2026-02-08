@@ -9,7 +9,7 @@ class RolesChecker:
         self.allowed_roles = allowed_roles
 
     def __call__(self, user_token: TokenAuthenticatedData = Depends(get_current_user) ):
-        if user_token.perfil not in self.allowed_roles:
+        if user_token.user.perfil not in self.allowed_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Operation not permitted for your role."

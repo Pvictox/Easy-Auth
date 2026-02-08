@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from app.models.usuario_model import UsuarioModel
+from app.schemas.usuario_schema import UsuarioPublic
 from datetime import datetime
 
 class TokenAuth(BaseModel):
@@ -38,5 +39,4 @@ class TokenAuthenticatedData(BaseModel):
     '''
     Schema for data extracted from a validated token.
     '''
-    uid: str | None
-    perfil: str | None
+    user: UsuarioPublic

@@ -40,13 +40,6 @@ class TokenRepository:
             raise
     
     def save_refresh_token(self, refresh_token: RefreshTokenCreate) -> TokenResponse:
-        # existing_tokens = self.get_all_tokens_by_kwargs(usuario_id=refresh_token.usuario_id, is_revoked=False)
-        # if existing_tokens:
-        #     #Revoking existing tokens before creating a new one
-        #     for token in existing_tokens:
-        #         token.is_revoked = True
-        #         self.session.add(token)
-        
         try:
             token_model = TokenModel(
                 token= refresh_token.token,
@@ -59,7 +52,7 @@ class TokenRepository:
             self.session.refresh(token_model)
             return TokenResponse(
                 token=refresh_token.token,
-                refresh_token=refresh_token.token,
+                #refresh_token=refresh_token.token,
                 exp=refresh_token.exp
             )
         except Exception as e:

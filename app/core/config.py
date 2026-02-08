@@ -10,5 +10,6 @@ class Settings:
     CRYPT_CONTEXT_SCHEMES: str  = os.getenv("CRYPT_CONTEXT_SCHEMES") #type: ignore
     ACESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACESS_TOKEN_EXPIRE_MINUTES")) #type: ignore
     REFRESH_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("REFRESH_TOKEN_EXPIRE_MINUTES"))  #type: ignore
+    ENVIRONMENT = os.getenv("ENVIRONMENT") #type: ignore
 
 settings = Settings()

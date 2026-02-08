@@ -26,11 +26,11 @@ SessionDependency = Annotated[ Session, Depends(get_session) ]
 
 @router.get("/me", tags=["usuarios"], status_code=status.HTTP_200_OK)
 async def read_current_user(current_user: Annotated[TokenAuthenticatedData, Depends(get_current_user)], session: SessionDependency):
-    if not current_user.uid:
+    if not current_user.user.uid:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authentication credentials")
     return {
-        "uid": current_user.uid,
-        "perfil": current_user.perfil,
+        "uid": current_user.user.uid,
+        "perfil": current_user.user.perfil,
         "message": "This is a protected route."
     }
 

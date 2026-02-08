@@ -1,16 +1,15 @@
-import json
-from fastapi import APIRouter, Depends, status, HTTPException, Form, Response, Cookie
-from app.database import Database, get_session
-from app.schemas.token_schema import TokenResponse, TokenRefreshRequest
-from app.schemas.login_schema import LoginRequest
-from app.repositories.usuario_repository import UsuarioRepository
-from typing import Annotated, List
+
+from fastapi import APIRouter, Depends, status, HTTPException, Form, Response, Request
+from app.database import get_session
+from app.schemas.token_schema import TokenAuthenticatedData
+from app.schemas.login_schema import LoginRequest, SucessfulLoginResponse
+from typing import Annotated
 from app.services.auth_service import AuthService
 from sqlmodel import Session
-from app.schemas.usuario_schema import UsuarioPublic
+from app.log_config.logging_config import get_logger
 
 from app.core.security import (
-    verify_password,
+    get_current_user,
 )
 
 router = APIRouter(
@@ -19,14 +18,14 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 
+logger = get_logger(__name__)
 
 SessionDependency = Annotated[ Session, Depends(get_session) ]
 
 
-@router.post("/login",tags=["authentication"], status_code=status.HTTP_200_OK, response_model=TokenResponse)
-async def login(login_data: Annotated[LoginRequest, Form()], session: SessionDependency, response:Response) -> TokenResponse | None:
+@router.post("/login",tags=["authentication"], status_code=status.HTTP_200_OK)
+async def login(login_data: Annotated[LoginRequest, Form()], session: SessionDependency, response:Response) -> SucessfulLoginResponse | None:
     try:
-        print("[AUTH ROUTER - INFO] Handling login request...")
         auth_service = AuthService(session=session)
         token_response = auth_service.handle_login(data=login_data, response=response)
         
@@ -38,9 +37,12 @@ async def login(login_data: Annotated[LoginRequest, Form()], session: SessionDep
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Login failed.")
     
     
-@router.post("/refresh", tags=["authentication"], status_code=status.HTTP_200_OK, response_model=TokenResponse)
-async def refresh_token(refresh_token: Annotated[str | None, Cookie()], session: SessionDependency, response: Response) -> TokenResponse | None:
+@router.post("/refresh", tags=["authentication"], status_code=status.HTTP_200_OK)
+async def refresh_token(session: SessionDependency, 
+                        response: Response,
+                        request: Request) -> SucessfulLoginResponse | None:
     try:
+        refresh_token = request.cookies.get("refresh_token")
         if not refresh_token:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Refresh token is missing")
         
@@ -51,5 +53,25 @@ async def refresh_token(refresh_token: Annotated[str | None, Cookie()], session:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
         
         return token_response
+    except HTTPException as http_exc:
+
+        raise http_exc
+    
+@router.post("/logout", tags=["authentication"], status_code=status.HTTP_200_OK)
+async def logout(response:Response, 
+                session: SessionDependency,
+                current_user: Annotated[TokenAuthenticatedData, Depends(get_current_user)],
+                request: Request) -> dict:
+    
+    try:
+        if not current_user: 
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authentication credentials")
+        
+        refresh_token = request.cookies.get("refresh_token")
+        logger.debug(f"Logout requested for user: {current_user.user.uid} with refresh token: {refresh_token}")
+        auth_service = AuthService(session=session)
+        logout_response = auth_service.logout(refresh_token=refresh_token, response=response)
+        
+        return logout_response
     except HTTPException as http_exc:
         raise http_exc

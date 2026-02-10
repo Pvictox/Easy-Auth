@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, status, HTTPException, Form, Response, Request
 from app.database import get_session
 from app.schemas.token_schema import TokenAuthenticatedData
-from app.schemas.login_schema import LoginRequest, SucessfulLoginResponse
+from app.schemas.login_schema import LoginRequest, SucessfulLoginResponse, LogoutResponse
 from typing import Annotated
 from app.services.auth_service import AuthService
 from sqlmodel import Session
@@ -23,10 +23,11 @@ logger = get_logger(__name__)
 SessionDependency = Annotated[ Session, Depends(get_session) ]
 
 
-@router.post("/login",tags=["authentication"], status_code=status.HTTP_200_OK)
+@router.post("/login",tags=["authentication"], status_code=status.HTTP_200_OK, response_model=SucessfulLoginResponse)
 async def login(login_data: Annotated[LoginRequest, Form()], session: SessionDependency, response:Response) -> SucessfulLoginResponse | None:
     try:
         auth_service = AuthService(session=session)
+        logger.debug(f"Attempting login with credentials: {login_data}")
         token_response = auth_service.handle_login(data=login_data, response=response)
         
         if not token_response:
@@ -37,7 +38,7 @@ async def login(login_data: Annotated[LoginRequest, Form()], session: SessionDep
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Login failed.")
     
     
-@router.post("/refresh", tags=["authentication"], status_code=status.HTTP_200_OK)
+@router.post("/refresh", tags=["authentication"], status_code=status.HTTP_200_OK, response_model=SucessfulLoginResponse)
 async def refresh_token(session: SessionDependency, 
                         response: Response,
                         request: Request) -> SucessfulLoginResponse | None:
@@ -57,11 +58,11 @@ async def refresh_token(session: SessionDependency,
 
         raise http_exc
     
-@router.post("/logout", tags=["authentication"], status_code=status.HTTP_200_OK)
+@router.post("/logout", tags=["authentication"], status_code=status.HTTP_200_OK, response_model=LogoutResponse)
 async def logout(response:Response, 
                 session: SessionDependency,
                 current_user: Annotated[TokenAuthenticatedData, Depends(get_current_user)],
-                request: Request) -> dict:
+                request: Request) -> LogoutResponse:
     
     try:
         if not current_user: 
@@ -75,3 +76,14 @@ async def logout(response:Response,
         return logout_response
     except HTTPException as http_exc:
         raise http_exc
+
+@router.get("/me", tags=["authentication"], status_code=status.HTTP_200_OK, response_model=SucessfulLoginResponse)
+async def fetch_current_user(current_user : Annotated[TokenAuthenticatedData, Depends(get_current_user)],
+                             request: Request) -> SucessfulLoginResponse:
+    if not current_user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authentication credentials")
+    
+    return SucessfulLoginResponse(
+        success=True,
+        user= current_user.user
+    )

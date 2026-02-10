@@ -24,16 +24,6 @@ _usuario_required = RolesChecker(allowed_roles=["usuario"])
 
 SessionDependency = Annotated[ Session, Depends(get_session) ]
 
-@router.get("/me", tags=["usuarios"], status_code=status.HTTP_200_OK)
-async def read_current_user(current_user: Annotated[TokenAuthenticatedData, Depends(get_current_user)], session: SessionDependency):
-    if not current_user.user.uid:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authentication credentials")
-    return {
-        "uid": current_user.user.uid,
-        "perfil": current_user.user.perfil,
-        "message": "This is a protected route."
-    }
-
 @router.get("/", tags=["usuarios"], status_code=status.HTTP_200_OK, response_model=List[UsuarioPublic])
 async def read_usuarios(session: SessionDependency) -> List[UsuarioPublic]:
     usuario_repository = UsuarioRepository(session=session)

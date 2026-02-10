@@ -12,3 +12,7 @@ class LoginRequest(BaseModel):
 class SucessfulLoginResponse(BaseModel):
     success: bool = True
     user: UsuarioPublic
+
+class LogoutResponse(BaseModel):
+    success: bool = True
+    message: str = "Logout successful"

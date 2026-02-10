@@ -5,7 +5,7 @@ from app.schemas.login_schema import LoginRequest
 from datetime import datetime
 from typing import Optional
 from app.schemas.token_schema import RefreshTokenCreate
-from app.schemas.login_schema import SucessfulLoginResponse
+from app.schemas.login_schema import SucessfulLoginResponse, LogoutResponse
 from app.schemas.usuario_schema import UsuarioPublic
 from app.core.config import settings
 from app.core.security import (
@@ -60,7 +60,7 @@ class AuthService:
                 value=access_token,
                 httponly=True,
                 secure=is_production,
-                samesite="lax",
+                samesite="strict",
                 max_age= int(settings.ACESS_TOKEN_EXPIRE_MINUTES) * 60 #type:ignore
             )
 
@@ -69,7 +69,7 @@ class AuthService:
                 value=refresh_token,
                 httponly=True,
                 secure=is_production,
-                samesite="lax",
+                samesite="strict",
                 max_age= int(settings.REFRESH_TOKEN_EXPIRE_MINUTES) * 60 #type:ignore
             )
 
@@ -123,7 +123,7 @@ class AuthService:
                 value=access_token,
                 httponly=True,
                 secure=is_production,
-                samesite="lax",
+                samesite="strict",
                 max_age= int(settings.ACESS_TOKEN_EXPIRE_MINUTES) * 60 #type:ignore
             )
 
@@ -132,7 +132,7 @@ class AuthService:
                 value=new_refresh_token,
                 httponly=True,
                 secure=is_production,
-                samesite="lax",
+                samesite="strict",
                 max_age= int(settings.REFRESH_TOKEN_EXPIRE_MINUTES) * 60 #type:ignore
             )
 
@@ -144,7 +144,7 @@ class AuthService:
             raise http_exc
 
 
-    def logout(self, response: Response,  refresh_token: Optional[str])-> dict:
+    def logout(self, response: Response,  refresh_token: Optional[str])-> LogoutResponse:
         try:
             logger.debug(f"Attempting to log out user with refresh token: {refresh_token}")
             if refresh_token:
@@ -155,13 +155,13 @@ class AuthService:
             response.delete_cookie("access_token")
             response.delete_cookie("refresh_token")
 
-            return {
-                "success": True,
-                "message": "Logged out successfully"
-            }
+            return LogoutResponse(
+                success=True,
+                message="Logged out successfully"
+            )
         except Exception as e:
             logger.error(f"[AUTH SERVICE - ERROR] Failed to handle logout: {e}")
-            return {
-                "success": False,
-                "message": "Failed to log out"
-            }
+            return LogoutResponse(
+                success=False,
+                message="Failed to log out"
+            )

@@ -82,6 +82,7 @@ def setup_logging() -> None:
     )
     error_handler.setLevel(logging.ERROR)
     error_handler.setFormatter(logging.Formatter(LOG_FORMAT, DATE_FORMAT))
+    error_handler.addFilter(lambda record: record.levelno >= logging.ERROR)
     error_handler.addFilter(AppOnlyFilter())
     root_logger.addHandler(error_handler)
 
@@ -93,6 +94,7 @@ def setup_logging() -> None:
     )
     warning_handler.setLevel(logging.WARNING)
     warning_handler.setFormatter(logging.Formatter(LOG_FORMAT, DATE_FORMAT))
+    warning_handler.addFilter(lambda record: record.levelno == logging.WARNING)
     warning_handler.addFilter(AppOnlyFilter())
     root_logger.addHandler(warning_handler)
     

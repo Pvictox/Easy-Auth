@@ -1,8 +1,9 @@
 
 from fastapi import APIRouter, Depends, status, HTTPException, Form, Response, Request
 from app.database import get_session
-from app.schemas.token_schema import TokenAuthenticatedData
+
 from app.schemas.login_schema import LoginRequest, SucessfulLoginResponse, LogoutResponse
+from app.dto import LoginRequestDTO, TokenAuthenticatedDataDTO, UsuarioPublicDTO
 from typing import Annotated
 from app.services.auth_service import AuthService
 from sqlmodel import Session
@@ -27,8 +28,8 @@ SessionDependency = Annotated[ Session, Depends(get_session) ]
 async def login(login_data: Annotated[LoginRequest, Form()], session: SessionDependency, response:Response) -> SucessfulLoginResponse | None:
     try:
         auth_service = AuthService(session=session)
-        logger.debug(f"Attempting login with credentials: {login_data}")
-        token_response = auth_service.handle_login(data=login_data, response=response)
+        login_data_dto = LoginRequestDTO(**login_data.model_dump())
+        token_response = auth_service.handle_login(data=login_data_dto, response=response)
         
         if not token_response:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid UID or password")
@@ -48,6 +49,7 @@ async def refresh_token(session: SessionDependency,
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Refresh token is missing")
         
         auth_service = AuthService(session=session)
+        logger.warning(f"Received refresh token: {refresh_token}")
         token_response = auth_service.refresh_acess_token(refresh_token=refresh_token, response=response)
         
         if not token_response:
@@ -61,7 +63,7 @@ async def refresh_token(session: SessionDependency,
 @router.post("/logout", tags=["authentication"], status_code=status.HTTP_200_OK, response_model=LogoutResponse)
 async def logout(response:Response, 
                 session: SessionDependency,
-                current_user: Annotated[TokenAuthenticatedData, Depends(get_current_user)],
+                current_user: Annotated[TokenAuthenticatedDataDTO, Depends(get_current_user)],
                 request: Request) -> LogoutResponse:
     
     try:
@@ -69,7 +71,6 @@ async def logout(response:Response,
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authentication credentials")
         
         refresh_token = request.cookies.get("refresh_token")
-        logger.debug(f"Logout requested for user: {current_user.user.uid} with refresh token: {refresh_token}")
         auth_service = AuthService(session=session)
         logout_response = auth_service.logout(refresh_token=refresh_token, response=response)
         
@@ -78,12 +79,11 @@ async def logout(response:Response,
         raise http_exc
 
 @router.get("/me", tags=["authentication"], status_code=status.HTTP_200_OK, response_model=SucessfulLoginResponse)
-async def fetch_current_user(current_user : Annotated[TokenAuthenticatedData, Depends(get_current_user)],
-                             request: Request) -> SucessfulLoginResponse:
+async def fetch_current_user(current_user : Annotated[TokenAuthenticatedDataDTO, Depends(get_current_user)]) -> SucessfulLoginResponse:
     if not current_user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authentication credentials")
     
     return SucessfulLoginResponse(
         success=True,
-        user= current_user.user
+        user= UsuarioPublicDTO(**current_user.user.model_dump())
     )

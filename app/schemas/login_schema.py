@@ -1,17 +1,20 @@
 from pydantic import BaseModel
 
-from app.schemas.usuario_schema import UsuarioPublic
+from app.dto import UsuarioPublicDTO
 
 class LoginRequest(BaseModel):
     '''
-    Schema for login request data.
+        Schema for login request data.
     '''
     uid: str
     password: str
 
 class SucessfulLoginResponse(BaseModel):
+    '''
+        Base schema for successful login response, containing the access token and user information.
+    '''
     success: bool = True
-    user: UsuarioPublic
+    user: UsuarioPublicDTO
 
 class LogoutResponse(BaseModel):
     success: bool = True

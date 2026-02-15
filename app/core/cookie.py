@@ -8,6 +8,7 @@ class CookieBearer(HTTPBearer):
     async def __call__(self, request:Request) -> str:
         #logger.debug(f"Acess_token extracted from cookies: {request.cookies.get('access_token')}")
         token = request.cookies.get("access_token")
+        
         if not token:
             #Fallback for compatibility
             authorization: str | None = request.headers.get("Authorization")

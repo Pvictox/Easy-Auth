@@ -11,14 +11,11 @@ class UsuarioBase(BaseModel):
 class UsuarioAuth(UsuarioBase):
     hashed_pass: str
 
-class UsuarioPublic(BaseModel):
-    nome: str
-    is_active: bool
-    uid: str
-    email: str
-    perfil: str
 
 class UsuarioFormData(BaseModel):
+    '''
+    Schema for receiving usuario data from form submissions, including password field.
+    '''
     nome: str
     uid: str
     email: str

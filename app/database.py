@@ -4,7 +4,7 @@ import os
 from sqlmodel import create_engine, SQLModel, text, Session
 from app.core.config import settings
 
-load_dotenv()  # Load environment variables from .env file
+load_dotenv() 
 
 class Database():
     '''

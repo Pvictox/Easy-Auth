@@ -1,12 +1,12 @@
 from app.repositories import UsuarioRepository, TokenRepository
 from fastapi.exceptions import HTTPException
 from fastapi import Response
-from app.schemas.login_schema import LoginRequest
+from app.dto import (LoginRequestDTO, 
+                     UsuarioTokenDTO, TokenModelCreateDTO,
+                     UsuarioPublicDTO)
 from datetime import datetime
 from typing import Optional
-from app.schemas.token_schema import RefreshTokenCreate
 from app.schemas.login_schema import SucessfulLoginResponse, LogoutResponse
-from app.schemas.usuario_schema import UsuarioPublic
 from app.core.config import settings
 from app.core.security import (
     verify_password,
@@ -26,7 +26,7 @@ class AuthService:
         self.usuario_repository = UsuarioRepository(session=session)
         self.token_repository = TokenRepository(session=session)
     
-    def handle_login(self, data:LoginRequest, response: Response) -> SucessfulLoginResponse | None:
+    def handle_login(self, data:LoginRequestDTO, response: Response) -> SucessfulLoginResponse | None:
         try: 
             usuario = self.usuario_repository.get_usuario_by_kwargs(uid=data.uid)
             if not usuario or not verify_password(data.password, usuario.hashed_pass):
@@ -34,27 +34,24 @@ class AuthService:
             if not usuario.is_active:
                 raise ValueError("User is inactive") #TODO: Custom Exception
             
-            usuario_public = UsuarioPublic(
-                uid=usuario.uid,
-                perfil=usuario.perfil.valor,
-                email=usuario.email,
-                is_active=usuario.is_active,
-                nome = usuario.nome
+            usuario_token = UsuarioTokenDTO(
+                **usuario.model_dump(exclude={"id_usuario", "hashed_pass", "perfil_id", "tokens"})
             )
 
-            access_token = create_access_token(usuario=usuario_public)
+            access_token = create_access_token(usuario=usuario_token)
             refresh_token, expiration = create_refresh_token()
-            
 
-            refresh = self.token_repository.save_refresh_token(refresh_token=RefreshTokenCreate(
+            refresh_token_create_dto = TokenModelCreateDTO(
                 token= refresh_token,
-                exp= expiration,
+                exp= datetime.fromtimestamp(expiration),
                 usuario_id= usuario.id_usuario
-            ))
+            )
+
+            refresh = self.token_repository.save_refresh_token(new_refresh_token=refresh_token_create_dto)
 
             is_production = settings.ENVIRONMENT == "production"
 
-            logger.debug(f"Setting access_token cookie with value: {access_token}")
+            #logger.debug(f"Setting access_token cookie with value: {access_token}")
             response.set_cookie(
                 key="access_token",
                 value=access_token,
@@ -64,6 +61,7 @@ class AuthService:
                 max_age= int(settings.ACESS_TOKEN_EXPIRE_MINUTES) * 60 #type:ignore
             )
 
+            #logger.warning(f"Setting refresh_token cookie with value: {refresh}")
             response.set_cookie(
                 key="refresh_token",
                 value=refresh_token,
@@ -74,11 +72,11 @@ class AuthService:
             )
 
             return SucessfulLoginResponse(
-                user=usuario_public,
+                user= UsuarioPublicDTO(**usuario_token.model_dump()),
             )
 
         except Exception as e:
-            print(f"[AUTH SERVICE - ERROR] Failed to handle login: {e}")
+            logger.error(f"[AUTH SERVICE - ERROR] Failed to handle login: {e}")
             return None
 
     def refresh_acess_token(self, refresh_token: str, response: Response) -> SucessfulLoginResponse | None:
@@ -100,7 +98,7 @@ class AuthService:
             self.token_repository.delete_token(stored_refresh_token)
 
             
-            usuario_public = UsuarioPublic(
+            usuario_public = UsuarioPublicDTO(
                 uid=usuario.uid,
                 perfil=usuario.perfil.valor,
                 email=usuario.email,
@@ -111,11 +109,14 @@ class AuthService:
             access_token = create_access_token(usuario=usuario_public)
             new_refresh_token, expiration = create_refresh_token()
 
-            refresh = self.token_repository.save_refresh_token(refresh_token=RefreshTokenCreate(
+            resfresh_token_create_dto = TokenModelCreateDTO(
                 token= new_refresh_token,
-                exp= expiration,
-                usuario_id= usuario.id_usuario
-            ))
+                exp= datetime.fromtimestamp(expiration),
+                usuario_id= usuario.id_usuario)
+
+            refresh = self.token_repository.save_refresh_token(new_refresh_token=resfresh_token_create_dto)
+
+            
 
             is_production = settings.ENVIRONMENT == "production"
             response.set_cookie(
@@ -127,6 +128,7 @@ class AuthService:
                 max_age= int(settings.ACESS_TOKEN_EXPIRE_MINUTES) * 60 #type:ignore
             )
 
+            logger.warning(f"Setting new refresh token cookie with value: {new_refresh_token}")
             response.set_cookie(
                 key="refresh_token",
                 value=new_refresh_token,
@@ -146,7 +148,6 @@ class AuthService:
 
     def logout(self, response: Response,  refresh_token: Optional[str])-> LogoutResponse:
         try:
-            logger.debug(f"Attempting to log out user with refresh token: {refresh_token}")
             if refresh_token:
                 stored_refresh_token = self.token_repository.get_token_by_kwargs(token = refresh_token)
                 if stored_refresh_token:

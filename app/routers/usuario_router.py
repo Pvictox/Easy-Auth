@@ -32,6 +32,12 @@ async def read_usuarios(session: SessionDependency, current_user = Depends(get_c
     return usuarios
 
 
+@router.get("/total", tags=["usuarios"], status_code=status.HTTP_200_OK)
+async def get_total_usuarios(session: SessionDependency, current_user = Annotated[TokenAuthenticatedDataDTO,Depends(get_current_user)]) -> dict:
+    usuario_service = UsuarioService(session=session)
+    total = usuario_service.get_total_usuarios()
+    return {'success': True, 'total': total}
+
 # @router.get("/{usuario_id}", tags=["usuarios"], status_code=status.HTTP_200_OK, response_model=UsuarioPublic)
 # async def read_usuario(usuario_id: int, session: SessionDependency) -> UsuarioPublic:
 #     usuario_repository = UsuarioRepository(session=session)

@@ -23,7 +23,10 @@ class UsuarioRepository:
         else:
             logger.warning(f"No usuario found with {kwargs}.")
             return None
-    
+
+    def get_count_usuarios(self, **kwargs) -> int:
+        count = self.session.query(UsuarioModel).filter_by(**kwargs).count()
+        return count    
 
     def get_all_usuarios(self) -> List[UsuarioModelDTO] | None:
         usuarios = self.session.query(UsuarioModel).all()

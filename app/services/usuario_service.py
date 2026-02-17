@@ -29,6 +29,13 @@ class UsuarioService:
             print(f"[USUARIO SERVICE - ERROR] Failed to create usuario: {e}")
             return None
 
+    def get_total_usuarios(self) -> int:
+        try:
+            total = self.usuario_repository.get_count_usuarios()
+            return total
+        except Exception as e:
+            logger.error(f"Failed to count usuarios: {e}")
+            return 0
 
     def get_all_usuarios(self) -> List[UsuarioPublicDTO]:
         try:

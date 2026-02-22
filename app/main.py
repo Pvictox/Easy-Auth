@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from app.database import Database
 from fastapi.middleware.cors import CORSMiddleware
 from .seeds import check_and_seed
+from .redis_config import RedisConfig
 
 setup_logging()
 logger = get_logger(__name__)
@@ -22,8 +23,13 @@ async def lifespan(app: FastAPI):
     if app.state.database.check_connection():
         check_and_seed()
         logger.info("Starting up application...")
+    
+    if RedisConfig.check_connection():
+        logger.info("Redis connection is healthy.")
     yield 
+    RedisConfig.close()
     logger.info("Shutting down application...")
+
 
 
 def create_app() -> FastAPI:

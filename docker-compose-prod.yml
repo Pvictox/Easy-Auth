@@ -16,6 +16,19 @@ services:
       timeout: 5s
       retries: 5
   
+  redis:
+    image: redis:7-alpine
+    container_name: auth_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    command: redis-server --appendonly yes
   app:
     build: .
     container_name: auth_backend
@@ -26,14 +39,19 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg2://postgres:${DB_PASSWORD}@db:5432/${DB_NAME}?options=-csearch_path=auth
       ENVIRONMENT: production 
+      REDIS_URL: redis://redis:6379/0
     depends_on:
       db: 
+        condition: service_healthy
+      redis:
         condition: service_healthy
     volumes:
       - .:/app
       - logs:/app/logs
     command: /start.sh
+  
 
 volumes:
   postgres_data:
+  redis_data:
   logs:

@@ -34,7 +34,6 @@ Um projeto de autenticação simples usando FastAPI, JWT e Redis para cache.
    pip install -r requirements.txt
    ```
 3. Acesse a pasta `app` e rode a aplicação:
-Desenvolvimento:
     ```bash
         fastapi dev app/main.py --host 0.0.0.0 --port 8000 --reload #Para Desenvolvimento
         fastapi run app/main.py --host 0.0.0.0 --port 8000 #Para Produção

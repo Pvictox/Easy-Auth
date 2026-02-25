@@ -1,0 +1,23 @@
+DB_PASSWORD = "super_secret_password" #Usados no docker-compose-{dev | prod}.yml para setar o usuário e o nome do banco na database dentro do container.
+DB_NAME = "my_easy_auth_db"
+
+#Database connection URL SQLAlchemy (OBS: Tem de ser neste formato de URL)
+DATABASE_URL = postgresql+psycopg2://postgres:{yourDBPassword}@{your_host}:{your_port}/{your_db_name}?{options=-csearch_path=auth} -> Esta ultima parte é opcional. Use se for um schema em especifico.
+
+REDIS_URL = "redis://redis:6379/0"   <-- Url do Redis
+
+#Security settings
+SECRET_KEY = "..."  <-- gere uma usando openssl rand -hex 32
+ALGORITHM = "HS256" <-- Um exemplo
+CRYPT_CONTEXT_SCHEMES = "bcrypt" <-- Recomendado. Pode usar ARGON também.
+ACESS_TOKEN_EXPIRE_MINUTES = "15" <-- Auto explicativo
+REFRESH_TOKEN_EXPIRE_MINUTES = 480 <-- Auto explicativo
+
+#LOGGING
+DATABASE_LOG = "False" <-- Sete para 'True' caso deseje ver os statements usados pelo banco ao realizar operações SQL.
+
+
+#ADMIN BASE PASSWORD 
+ADMIN_BASE_PASSWORD = "admin_base_pass" <-- Usado na hora de seedar o admin no banco.
+
+ENVIRONMENT = "development" <-- IMPORTANTE: Isto seta como o cookie setado na autenticação vai funcionar para se comunicar com seu front. Use 'development' se estiver rodando seu front em 'dev' | use 'production' caso contrário.

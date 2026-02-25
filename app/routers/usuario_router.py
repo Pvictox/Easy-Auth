@@ -1,15 +1,15 @@
-from fastapi import APIRouter, Depends, status, HTTPException, Form
+from fastapi import APIRouter, Depends, status, Form
 from app.core.roles_checker import RolesChecker
-from app.dto.usuario_DTO import UsuarioPublicDTO, UsuarioModelDTO
+from app.dto.usuario_DTO import UsuarioPublicDTO
 from app.dto import TokenAuthenticatedDataDTO
 from app.schemas.usuario_schema import *
-from app.repositories.usuario_repository import UsuarioRepository #TODO: Remove if not used
 from app.database import Database, get_session
 from app.core.security import get_current_user
 from typing import Annotated, List
 from sqlmodel import Session
 from app.services.usuario_service import UsuarioService
 from app.log_config.logging_config import get_logger
+from app.redis_cache import redis_cache
 
 logger = get_logger(__name__)
 
@@ -26,6 +26,7 @@ _usuario_required = RolesChecker(allowed_roles=["usuario"])
 SessionDependency = Annotated[ Session, Depends(get_session) ]
 
 @router.get("/", tags=["usuarios"], status_code=status.HTTP_200_OK, response_model=List[UsuarioPublicDTO])
+@redis_cache(ttl=300, key_prefix="usuarios:all")
 async def read_usuarios(session: SessionDependency, current_user = Depends(get_current_user)) -> List[UsuarioPublicDTO]:
     usuario_service = UsuarioService(session=session)
     usuarios = usuario_service.get_all_usuarios()

@@ -5,18 +5,20 @@ from app.models.perfil_model import PerfilModel
 from typing import List, Annotated
 from app.schemas.usuario_schema import *
 from unidecode import unidecode
+from sqlmodel import Session, select, func
 from app.log_config.logging_config import get_logger
 
 logger = get_logger(__name__)
 class UsuarioRepository:
     
-    def __init__(self, session):
+    def __init__(self, session: Session):
         self.session = session
         self.perfil_repository = PerfilRepository(session=session)
     
     #TODO: Put in a generic base repository 
     def get_usuario_by_kwargs(self, **kwargs) -> UsuarioModelDTO | None:
-        usuario = self.session.query(UsuarioModel).filter_by(**kwargs).first()
+        statement = select(UsuarioModel).filter_by(**kwargs)
+        usuario = self.session.exec(statement).first()
         usuario_dto = UsuarioModelDTO.model_validate(usuario) if usuario else None
         if usuario_dto:
             return usuario_dto
@@ -25,15 +27,18 @@ class UsuarioRepository:
             return None
 
     def get_count_usuarios(self, **kwargs) -> int:
-        count = self.session.query(UsuarioModel).filter_by(**kwargs).count()
+        statement = select(func.count()).select_from(UsuarioModel).filter_by(**kwargs)
+        count = self.session.exec(statement).one()
         return count    
 
-    def get_all_usuarios(self) -> List[UsuarioModelDTO] | None:
-        usuarios = self.session.query(UsuarioModel).all()
+    def get_all_usuarios_paginated(self, skip: int = 0, limit: int = 10) -> List[UsuarioModelDTO] | None:
+        statement = select(UsuarioModel).offset(skip).limit(limit)
+        usuarios = self.session.exec(statement).all()
         return [
             UsuarioModelDTO.model_validate(usuario)
             for usuario in usuarios
         ]
+
 
     def create_usuario(self, data: UsuarioFormData) -> UsuarioModelDTO | None:
         try: 

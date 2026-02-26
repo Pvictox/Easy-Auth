@@ -47,19 +47,25 @@ def redis_cache(ttl: int = 300, key_prefix: str = ""):
         return wrapper
     return decorator
 
-def redis_invalidate(*cache_keys: str):
-    """Invalida uma ou mais chaves do Redis após a execução da função."""
+def redis_invalidate(*patterns: str):
     def decorator(func: Callable):
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
             result = await func(*args, **kwargs)
             redis = RedisConfig.get_instance()
-            for key in cache_keys:
+
+            for pattern in patterns:
                 try:
-                    redis.delete(key)
-                    logger.info(f"Cache INVALIDADO → {key}")
+                    # scan_iter busca as chaves que batem com o padrão
+                    keys = list(redis.scan_iter(match=pattern))
+                    if keys:
+                        redis.delete(*keys)
+                        logger.info(f"Cache INVALIDADO → {len(keys)} chave(s) com padrão '{pattern}'")
+                    else:
+                        logger.info(f"Nenhuma chave encontrada para o padrão '{pattern}'")
                 except Exception as e:
-                    logger.warning(f"Erro ao invalidar cache ({key}): {e}")
+                    logger.warning(f"Erro ao invalidar cache (padrão: {pattern}): {e}")
+
             return result
         return wrapper
     return decorator

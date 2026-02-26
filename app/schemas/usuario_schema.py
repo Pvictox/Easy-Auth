@@ -1,5 +1,7 @@
 from pydantic import BaseModel
 
+from app.dto.usuario_DTO import UsuarioPublicDTO
+
 class UsuarioBase(BaseModel):
     id_usuario: int
     nome: str
@@ -8,10 +10,12 @@ class UsuarioBase(BaseModel):
     email: str
     perfil_id: int
 
-class UsuarioAuth(UsuarioBase):
-    hashed_pass: str
+class UsuarioBaseResponse(UsuarioBase):
+    pass
 
-
+class UsuarioCreateResponse(BaseModel):
+    sucess: bool
+    user: UsuarioPublicDTO 
 class UsuarioFormData(BaseModel):
     '''
     Schema for receiving usuario data from form submissions, including password field.

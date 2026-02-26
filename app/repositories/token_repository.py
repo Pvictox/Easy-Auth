@@ -3,19 +3,21 @@ from app.dto import RefreshTokenCreate, TokenModelCreateDTO
 from app.models.token_model import TokenModel
 from app.schemas.token_schema import TokenResponse
 from app.dto import TokenModelDTO
+from sqlmodel import Session, select
 from app.log_config.logging_config import get_logger
 from typing import List
 
 logger = get_logger(__name__)
 class TokenRepository:
     
-    def __init__(self, session):
+    def __init__(self, session: Session):
         self.session = session
 
 
     #TODO: Put in a generic base repository 
     def get_token_by_kwargs(self, **kwargs) -> TokenModelDTO | None:
-        token = self.session.query(TokenModel).filter_by(**kwargs).first()
+        statement = select(TokenModel).filter_by(**kwargs)
+        token = self.session.exec(statement).first()
         if token:
             return TokenModelDTO(**token.model_dump())
         else:
@@ -23,9 +25,10 @@ class TokenRepository:
             return None  
         
     def get_all_tokens_by_kwargs(self, **kwargs) -> List[TokenModelDTO] | None:
-        token = self.session.query(TokenModel).filter_by(**kwargs).all()
-        if token:
-            return [TokenModelDTO(**t.model_dump()) for t in token]
+        statement = select(TokenModel).filter_by(**kwargs)
+        tokens = self.session.exec(statement).all()
+        if tokens:
+            return [TokenModelDTO(**t.model_dump()) for t in tokens]
         else:
             logger.warning(f"No token found with {kwargs}.")
             return None  

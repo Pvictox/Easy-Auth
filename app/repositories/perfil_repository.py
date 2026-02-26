@@ -1,24 +1,26 @@
 from app.models.perfil_model import PerfilModel
 from typing import List, Annotated
 from app.dto import PerfilModelDTO
-from unidecode import unidecode
+from sqlmodel import Session, select
 from app.log_config.logging_config import get_logger
 
 logger = get_logger(__name__)
 class PerfilRepository:
     
-    def __init__(self, session):
+    def __init__(self, session:Session):
         self.session = session
     
     def get_all_perfis(self) -> List[PerfilModelDTO] | None:
-        perfis = self.session.query(PerfilModel).all()
+        statement = select(PerfilModel)
+        perfis = self.session.exec(statement).all()
         return [
             PerfilModelDTO(**perfil.model_dump())
             for perfil in perfis
         ]
 
     def get_perfil_by_kwargs(self, **kwargs) -> PerfilModelDTO | None:
-        perfil = self.session.query(PerfilModel).filter_by(**kwargs).first()
+        statement = select(PerfilModel).filter_by(**kwargs)
+        perfil = self.session.exec(statement).first()
         perfil_dto = PerfilModelDTO.model_validate(perfil) if perfil else None
         if perfil_dto:
             return perfil_dto

@@ -28,7 +28,7 @@ class AuthService:
     
     def handle_login(self, data:LoginRequestDTO, response: Response) -> SucessfulLoginResponse | None:
         try: 
-            usuario = self.usuario_repository.get_usuario_by_kwargs(uid=data.uid)
+            usuario = self.usuario_repository.get_by_kwargs(uid=data.uid)
             if not usuario or not verify_password(data.password, usuario.hashed_pass):
                 return None
             if not usuario.is_active:
@@ -81,7 +81,7 @@ class AuthService:
 
     def refresh_acess_token(self, refresh_token: str, response: Response) -> SucessfulLoginResponse | None:
         try:
-            stored_refresh_token = self.token_repository.get_token_by_kwargs(token = refresh_token)
+            stored_refresh_token = self.token_repository.get_by_kwargs(token = refresh_token)
             if not stored_refresh_token:
                 raise HTTPException(status_code=401, detail="Invalid refresh token")
             
@@ -91,11 +91,11 @@ class AuthService:
             if stored_refresh_token.exp.timestamp() < datetime.now().timestamp():
                 raise HTTPException(status_code=401, detail="Refresh token has expired")
 
-            usuario = self.usuario_repository.get_usuario_by_kwargs(id_usuario=stored_refresh_token.usuario_id)
+            usuario = self.usuario_repository.get_by_kwargs(id_usuario=stored_refresh_token.usuario_id)
             if not usuario:
                 raise HTTPException(status_code=404, detail="User not found")
             
-            self.token_repository.delete_token(stored_refresh_token)
+            self.token_repository.delete(stored_refresh_token)
 
             
             usuario_public = UsuarioPublicDTO(
@@ -149,9 +149,9 @@ class AuthService:
     def logout(self, response: Response,  refresh_token: Optional[str])-> LogoutResponse:
         try:
             if refresh_token:
-                stored_refresh_token = self.token_repository.get_token_by_kwargs(token = refresh_token)
+                stored_refresh_token = self.token_repository.get_by_kwargs(token = refresh_token)
                 if stored_refresh_token:
-                    self.token_repository.delete_token(stored_refresh_token)
+                    self.token_repository.delete(stored_refresh_token)
             
             response.delete_cookie("access_token")
             response.delete_cookie("refresh_token")

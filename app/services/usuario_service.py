@@ -15,7 +15,7 @@ class UsuarioService:
     
     def create_usuario(self, data:UsuarioFormData) -> UsuarioPublicDTO | None:
         try: 
-            usuario = self.usuario_repository.get_usuario_by_kwargs(uid=data.uid, email=data.email)
+            usuario = self.usuario_repository.get_by_kwargs(uid=data.uid, email=data.email)
             if usuario:
                 raise ValueError("UID or Email already exists") #TODO: Custom Exception
             
@@ -36,7 +36,7 @@ class UsuarioService:
 
     def get_total_usuarios(self) -> int:
         try:
-            total = self.usuario_repository.get_count_usuarios()
+            total = self.usuario_repository.get_count()
             return total
         except Exception as e:
             logger.error(f"Failed to count usuarios: {e}")
@@ -56,7 +56,7 @@ class UsuarioService:
             if total_usuarios == 0:
                 return empty_reponse
             
-            usuarios = self.usuario_repository.get_all_usuarios_paginated(skip=skip, limit=limit)
+            usuarios = self.usuario_repository.get_all_paginated(skip=skip, limit=limit)
             if not usuarios:
                 return empty_reponse
             

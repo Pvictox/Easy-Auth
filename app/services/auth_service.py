@@ -57,7 +57,7 @@ class AuthService:
                 value=access_token,
                 httponly=True,
                 secure=is_production,
-                samesite="strict",
+                samesite='lax',
                 max_age= int(settings.ACESS_TOKEN_EXPIRE_MINUTES) * 60 #type:ignore
             )
 
@@ -67,7 +67,7 @@ class AuthService:
                 value=refresh_token,
                 httponly=True,
                 secure=is_production,
-                samesite="strict",
+                samesite='lax',
                 max_age= int(settings.REFRESH_TOKEN_EXPIRE_MINUTES) * 60 #type:ignore
             )
 
@@ -119,12 +119,15 @@ class AuthService:
             
 
             is_production = settings.ENVIRONMENT == "production"
+            response.delete_cookie("access_token")
+            response.delete_cookie("refresh_token")
+            logger.warning(f"Setting new access token cookie with value: {access_token}")
             response.set_cookie(
                 key="access_token",
                 value=access_token,
                 httponly=True,
                 secure=is_production,
-                samesite="strict",
+                samesite='lax',
                 max_age= int(settings.ACESS_TOKEN_EXPIRE_MINUTES) * 60 #type:ignore
             )
 
@@ -134,7 +137,7 @@ class AuthService:
                 value=new_refresh_token,
                 httponly=True,
                 secure=is_production,
-                samesite="strict",
+                samesite='lax',
                 max_age= int(settings.REFRESH_TOKEN_EXPIRE_MINUTES) * 60 #type:ignore
             )
 

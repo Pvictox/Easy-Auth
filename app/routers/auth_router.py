@@ -46,6 +46,7 @@ async def refresh_token(session: SessionDependency,
     try:
         refresh_token = request.cookies.get("refresh_token")
         if not refresh_token:
+            logger.warning("Refresh token is missing in the request cookies.")
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Refresh token is missing")
         
         auth_service = AuthService(session=session)
@@ -57,7 +58,7 @@ async def refresh_token(session: SessionDependency,
         
         return token_response
     except HTTPException as http_exc:
-
+        logger.error(f"HTTPException during token refresh: {http_exc.detail}")
         raise http_exc
     
 @router.post("/logout", tags=["authentication"], status_code=status.HTTP_200_OK, response_model=LogoutResponse)
@@ -79,7 +80,8 @@ async def logout(response:Response,
         raise http_exc
 
 @router.get("/me", tags=["authentication"], status_code=status.HTTP_200_OK, response_model=SucessfulLoginResponse)
-async def fetch_current_user(current_user : Annotated[TokenAuthenticatedDataDTO, Depends(get_current_user)]) -> SucessfulLoginResponse:
+async def fetch_current_user(current_user = Depends(get_current_user)) -> SucessfulLoginResponse:
+    logger.warning(f"Current user data: {current_user}")
     if not current_user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authentication credentials")
     

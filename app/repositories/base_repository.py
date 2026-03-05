@@ -54,6 +54,39 @@ class BaseRepository(Generic[ModelType, DTOType]):
         count = self.session.exec(statement).one()
         return count
 
+    def update(self, instance_DTO: DTOType) -> DTOType | None:
+        try:
+            pk_name, pk_value = self._get_pk_value(instance_DTO)
+            db_instance = self.session.get(self.model, pk_value)
+            if not db_instance:
+                logger.warning(f"{self.model.__name__} with {pk_name}={pk_value} not found in database. Cannot update.")
+                return None
+
+            for field, value in instance_DTO.model_dump().items():
+                setattr(db_instance, field, value)
+
+            self.session.add(db_instance)
+            self.session.commit()
+            self.session.refresh(db_instance)
+            return self.dto.model_validate(db_instance)
+        except Exception as e:
+            self.session.rollback()
+            logger.error(f"[{self.model.__name__.upper()} REPOSITORY - ERROR] Failed to update {self.model.__name__}: {e}")
+            raise
+    
+    def create(self, instance_DTO: DTOType) -> DTOType | None:
+        try:
+            instance = self.model(**instance_DTO.model_dump())
+            self.session.add(instance)
+            self.session.commit()
+            self.session.refresh(instance)
+            return self.dto.model_validate(instance)
+        except Exception as e:
+            self.session.rollback()
+            logger.error(f"[{self.model.__name__.upper()} REPOSITORY - ERROR] Failed to create {self.model.__name__}: {e}")
+            raise
+    
+
     def delete(self, instance_DTO: DTOType) -> None:
         try:
             pk_name, pk_value = self._get_pk_value(instance_DTO)

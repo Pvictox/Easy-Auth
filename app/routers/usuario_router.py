@@ -11,6 +11,7 @@ from sqlmodel import Session
 from app.services.usuario_service import UsuarioService
 from app.log_config.logging_config import get_logger
 from app.redis_cache import redis_cache, redis_invalidate
+
 from app.schemas.paginated_schema import PaginatedResponse
 
 logger = get_logger(__name__)
@@ -31,10 +32,10 @@ SessionDependency = Annotated[ Session, Depends(get_session) ]
 @redis_cache(ttl=180, key_prefix=f"usuarios:{{page}}:{{limit}}")
 async def read_usuarios(session: SessionDependency, current_user = Depends(get_current_user),
                         page: int = Query(default=1, ge=1),
-                        limit: int = Query(default=2, ge=1)) -> PaginatedResponse[UsuarioPublicDTO]:
+                        limit: int = Query(default=10, ge=1)) -> PaginatedResponse[UsuarioPublicDTO]:
     
     usuario_service = UsuarioService(session=session)
-    usuarios = usuario_service.get_all_usuarios(skip=(page-1)*limit, limit=limit)
+    usuarios = usuario_service.get_all_usuarios(skip=(page-1)*limit, limit=limit) 
     return usuarios
 
 
@@ -54,7 +55,7 @@ async def get_total_usuarios(session: SessionDependency, current_user = Annotate
 #     return usuario
 
 
-@router.post("/", tags=["usuarios"], status_code=status.HTTP_201_CREATED, response_model=UsuarioCreateResponse) #TODO: Ajustar retorno
+@router.post("/", tags=["usuarios"], status_code=status.HTTP_201_CREATED, response_model=UsuarioCreateResponse, dependencies=[Depends(_admin_required)]) #TODO: Ajustar retorno
 @redis_invalidate("usuarios:*") # Invalida cache de listagem de usuarios
 async def create_usuario(
     data: Annotated[UsuarioFormData, Form()],
@@ -65,5 +66,5 @@ async def create_usuario(
     print("[USUARIO ROUTER - INFO] Creating new usuario...")
     new_usuario = usuario_service.create_usuario(data=data)
     if not new_usuario:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create usuario")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to create usuario.")
     return UsuarioCreateResponse(sucess=True, user=new_usuario)

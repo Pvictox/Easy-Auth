@@ -6,7 +6,7 @@ from app.dto import TokenAuthenticatedDataDTO
 from app.schemas.usuario_schema import *
 from app.database import Database, get_session
 from app.core.security import get_current_user
-from typing import Annotated, List
+from typing import Annotated, Optional
 from sqlmodel import Session
 from app.services.usuario_service import UsuarioService
 from app.log_config.logging_config import get_logger
@@ -29,13 +29,16 @@ _usuario_required = RolesChecker(allowed_roles=["usuario"])
 SessionDependency = Annotated[ Session, Depends(get_session) ]
 
 @router.get("/", tags=["usuarios"], status_code=status.HTTP_200_OK, response_model=PaginatedResponse[UsuarioPublicDTO])
-@redis_cache(ttl=180, key_prefix=f"usuarios:{{page}}:{{limit}}")
+#@redis_cache(ttl=180, key_prefix=f"usuarios:{{page}}:{{limit}}")
 async def read_usuarios(session: SessionDependency, current_user = Depends(get_current_user),
                         page: int = Query(default=1, ge=1),
-                        limit: int = Query(default=10, ge=1)) -> PaginatedResponse[UsuarioPublicDTO]:
+                        limit: int = Query(default=5, ge=1),
+                        name: Optional[str] = Query(default=None, description="Optional name filter"),
+                        perfil: Optional[str] = Query(default=None, description="Optional perfil filter")
+                        ) -> PaginatedResponse[UsuarioPublicDTO]:
     
     usuario_service = UsuarioService(session=session)
-    usuarios = usuario_service.get_all_usuarios(skip=(page-1)*limit, limit=limit) 
+    usuarios = usuario_service.get_all_usuarios(skip=(page-1)*limit, limit=limit, name_filter=name, perfil_filter=perfil) 
     return usuarios
 
 

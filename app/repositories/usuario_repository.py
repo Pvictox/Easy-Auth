@@ -1,9 +1,11 @@
+from typing import List
+
 from app.models.usuario_model import UsuarioModel
 from app.repositories import PerfilRepository
 from app.dto.usuario_DTO import UsuarioModelDTO
 from app.schemas.usuario_schema import *
 from unidecode import unidecode
-from sqlmodel import Session
+from sqlmodel import Session, select, func, col
 from app.log_config.logging_config import get_logger
 from app.repositories.base_repository import BaseRepository
 
@@ -34,3 +36,35 @@ class UsuarioRepository(BaseRepository[UsuarioModel, UsuarioModelDTO]):
             self.session.rollback()
             logger.error(f"[USUARIO REPOSITORY - ERROR] Failed to create new usuario: {e}")
             return None
+
+    def get_count_with_filters_ilike(self, **kwargs) -> int:
+        nome_filter = kwargs.get('nome')
+        perfil_id_filter = kwargs.get('perfil_id')
+
+        statement = select(func.count()).select_from(self.model)
+        logger.warning(f"Building count query with filters - nome: {nome_filter}, perfil_id: {perfil_id_filter}")
+        if nome_filter:
+            statement = statement.where(col(UsuarioModel.nome).ilike(f"%{nome_filter}%"))
+        
+        if perfil_id_filter:
+            statement = statement.where(UsuarioModel.perfil_id == perfil_id_filter)
+
+        count = self.session.exec(statement).one()
+        return count
+
+    def get_all_paginated_ilike(self, skip: int = 0, limit: int = 10, **kwargs) -> List[UsuarioModelDTO]:
+        nome_filter = kwargs.get('nome')
+        perfil_id_filter = kwargs.get('perfil_id')
+
+        statement = select(self.model)
+        if nome_filter:
+            statement = statement.where(col(UsuarioModel.nome).ilike(f"%{nome_filter}%"))
+        
+        if perfil_id_filter:
+            statement = statement.where(UsuarioModel.perfil_id == perfil_id_filter)
+
+        
+        statement = statement.offset(skip).limit(limit)
+        instances = self.session.exec(statement).all()
+
+        return [self.dto.model_validate(instance) for instance in instances]

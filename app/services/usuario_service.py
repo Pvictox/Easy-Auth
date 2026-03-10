@@ -1,8 +1,9 @@
-from app.repositories import UsuarioRepository
+from app.repositories import UsuarioRepository, PerfilRepository
 from app.schemas.usuario_schema import UsuarioFormData, UsuarioBase
 from app.dto.usuario_DTO import UsuarioPublicDTO, UsuarioModelDTO
 from app.schemas.paginated_schema import PaginatedResponse
-from typing import List
+
+from typing import List, Optional
 from app.core.security import get_password_hash
 from app.log_config.logging_config import get_logger
 
@@ -11,6 +12,7 @@ class UsuarioService:
 
     def __init__(self, session ):
         self.usuario_repository = UsuarioRepository(session=session)
+        self.perfil_repository = PerfilRepository(session=session)
 
     
     def create_usuario(self, data:UsuarioFormData) -> UsuarioPublicDTO | None:
@@ -34,15 +36,15 @@ class UsuarioService:
             print(f"[USUARIO SERVICE - ERROR] Failed to create usuario: {e}")
             return None
 
-    def get_total_usuarios(self) -> int:
+    def get_total_usuarios(self, **kwargs) -> int:
         try:
-            total = self.usuario_repository.get_count()
+            total = self.usuario_repository.get_count_with_filters_ilike(**kwargs)
             return total
         except Exception as e:
             logger.error(f"Failed to count usuarios: {e}")
             return 0
 
-    def get_all_usuarios(self, skip: int=0, limit: int=10) -> PaginatedResponse[UsuarioPublicDTO]:
+    def get_all_usuarios(self, skip: int=0, limit: int=10, name_filter: Optional[str] = None, perfil_filter: Optional[str] = None) -> PaginatedResponse[UsuarioPublicDTO]:
         empty_reponse = PaginatedResponse(
                     items=[],
                     total_items=0,
@@ -51,12 +53,23 @@ class UsuarioService:
                     skip=skip,
                     limit=limit
         )
+        
         try:
-            total_usuarios = self.get_total_usuarios()
+            filters = {}
+            if name_filter:
+                filters['nome'] = name_filter
+            if perfil_filter:
+                perfil = self.perfil_repository.get_by_kwargs(valor=perfil_filter)
+                if not perfil:
+                    logger.warning(f"Perfil with name '{perfil_filter}' not found. Ignoring perfil filter.")
+                else:
+                    filters['perfil_id'] = perfil.id_perfil
+
+            total_usuarios = self.get_total_usuarios(**filters)
             if total_usuarios == 0:
                 return empty_reponse
             
-            usuarios = self.usuario_repository.get_all_paginated(skip=skip, limit=limit)
+            usuarios = self.usuario_repository.get_all_paginated_ilike(skip=skip, limit=limit, **filters)
             if not usuarios:
                 return empty_reponse
             

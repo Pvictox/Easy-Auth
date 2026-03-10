@@ -1,4 +1,4 @@
-from typing import Generic, TypeVar, Type, List
+from typing import Generic, Optional, TypeVar, Type, List
 from sqlmodel import SQLModel, Session, select, func
 from pydantic import BaseModel
 from app.log_config.logging_config import get_logger
@@ -44,11 +44,16 @@ class BaseRepository(Generic[ModelType, DTOType]):
 
         return [self.dto.model_validate(instance) for instance in instances]
 
-    def get_all_paginated(self, skip: int = 0, limit: int = 10) -> List[DTOType]:
-        statement = select(self.model).offset(skip).limit(limit)
+    #Use only if you need a pagination with/without filters that are not ilike. For ilike filters, create a custom method in the repository (like get_all_paginated_ilike) and use it in the service.
+    #Check 'UsuarioRepository.get_all_paginated_ilike' for an example of how to create a custom pagination method with ilike filters.
+    def get_all_paginated(self, skip: int = 0, limit: int = 10, **kwargs) -> List[DTOType]:
+        statement = select(self.model).filter_by(**kwargs).offset(skip).limit(limit)
         instances = self.session.exec(statement).all()
         return [self.dto.model_validate(instance) for instance in instances]
     
+    
+    #The same ideia applies to this function. Need a filter with ilike? Create a custom method in the repository and use it in the service.
+    #Check 'UsuarioRepository.get_count_with_filters_ilike' for an example.
     def get_count(self, **kwargs) -> int:
         statement = select(func.count()).select_from(self.model).filter_by(**kwargs)
         count = self.session.exec(statement).one()

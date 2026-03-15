@@ -25,7 +25,7 @@ class UsuarioRepository(BaseRepository[UsuarioModel, UsuarioModelDTO]):
             if not perfil:
                 logger.error(f"[USUARIO REPOSITORY - ERROR] Perfil '{perfil_nome}' not found. Cannot create usuario.")
                 return None
-            new_usuario = UsuarioModel(nome=data.nome, perfil_id=perfil.id_perfil, uid=data.uid, email=data.email, hashed_pass=data.password)
+            new_usuario = UsuarioModel(nome=data.nome, perfil_id=perfil.id_perfil, uid=data.uid, email=data.email, hashed_pass=data.password, is_active=data.ativo)
             self.session.add(new_usuario)
             self.session.commit()
             self.session.refresh(new_usuario)

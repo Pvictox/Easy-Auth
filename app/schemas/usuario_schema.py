@@ -24,5 +24,6 @@ class UsuarioFormData(BaseModel):
     uid: str
     email: str
     perfil: str
+    ativo: bool = True
     password: str
     
